@@ -11,9 +11,9 @@ dotenv.config();
 
 task("swap", "Swap tokens")
   .addParam("to", "Address of the receiver")
-  .addParam("amount", "Amount of tokens to swap")
   .addParam("token", "Address of the token to swap")
-  .addParam("chainId", "Chain ID of the token")
+  .addParam("amount", "Amount of tokens to swap")
+  .addParam("chainId", "Chain ID of the reciever")
   .setAction(async (taskArgs, hre) => {
     const [signer] = await hre.ethers.getSigners();
     const contractAddr = process.env.CONTRACT_ADDRESS_BRIDGE;
@@ -24,7 +24,7 @@ task("swap", "Swap tokens")
       signer
     );
 
-    const result = await BridgeContract.swap(taskArgs.to, taskArgs.amount, taskArgs.token, taskArgs.chainId);
+    const result = await BridgeContract.swap(taskArgs.to, taskArgs.token, taskArgs.amount, taskArgs.chainId);
 
     console.log(result);
   });

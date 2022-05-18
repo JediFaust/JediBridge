@@ -4,7 +4,6 @@ import { HardhatUserConfig, task } from "hardhat/config";
 import "@nomiclabs/hardhat-etherscan";
 import "@nomiclabs/hardhat-waffle";
 import "@typechain/hardhat";
-// import "hardhat-gas-reporter";
 import "solidity-coverage";
 import "./tasks/index.ts";
 
@@ -25,8 +24,12 @@ task("accounts", "Prints the list of accounts", async (taskArgs, hre) => {
 
 const config: HardhatUserConfig = {
   solidity: "0.8.4",
-  defaultNetwork: "hardhat",
+  defaultNetwork: "rinkeby",
   networks: {
+    hardhat: {
+      gas: "auto",
+      gasPrice: "auto",
+    },
     localhost: {
       url: "http://localhost:8545",
     },

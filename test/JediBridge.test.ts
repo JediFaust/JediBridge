@@ -48,6 +48,9 @@ describe("JediBridge", function () {
 
     await jedi20bsc.setMinterBurner(jediBridgeBsc.address);
     await jedi20bsc.setMinterBurner(validator.address);
+
+    await jediBridge.includeToken(jedi20.address);
+    await jediBridge.updateChainById(31337);
   });
 
   it("should be deployed", async function () {
@@ -85,153 +88,70 @@ describe("JediBridge", function () {
     await jedi20.mint(userOne.address, 100);
     expect(await jedi20.balanceOf(userOne.address)).to.eq(100);
 
-    expect(
-      await jediBridge
-        .connect(userOne)
-        .swap(userTwo.address, 100, jedi20.address, 56)
-    )
-      .to.emit(jediBridge, "swapInitialized")
-      .withArgs(userOne.address, userTwo.address, 100, 56);
+    const tx = await jediBridge
+      .connect(userOne)
+      .swap(userTwo.address, 100, jedi20.address, 31337);
+
+    const rc = await tx.wait();
+    const event = rc.events.find(
+      (event: { event: string }) => event.event === "SwapInitialized"
+    );
+    const [from, to, token, value, chainFrom, chainTo, nonce] = event.args;
+
+    // Checking event with right args
+    expect(from).to.eq(userOne.address);
+    expect(to).to.eq(userTwo.address);
+    expect(token).to.eq(jedi20.address);
+    expect(value).to.eq(100);
+    expect(chainTo).to.eq(31337);
+    expect(chainFrom).to.eq(31337);
+    expect(nonce).to.eq(0);
+
+    // Checking balances after swap
     expect(await jedi20.balanceOf(userOne.address)).to.eq(0);
 
     // generate signature on Backend API
     const message = ethers.utils.solidityKeccak256(
-      ["address", "uint256"],
-      [userTwo.address, 100]
+      [
+        "address",
+        "address",
+        "address",
+        "uint256",
+        "uint256",
+        "uint256",
+        "uint256",
+      ],
+      [
+        userOne.address,
+        userTwo.address,
+        jedi20bsc.address,
+        100,
+        31337,
+        31337,
+        0,
+      ]
     );
+
     const signature = await validator.signMessage(
       ethers.utils.arrayify(message)
     );
 
+    const sig = ethers.utils.splitSignature(signature);
+
     await jediBridgeBsc
       .connect(userTwo)
-      .redeem(jedi20bsc.address, 100, signature);
+      .redeem(
+        userOne.address,
+        jedi20bsc.address,
+        100,
+        0,
+        31337,
+        sig.v,
+        sig.r,
+        sig.s
+      );
 
+    // Checking balances after redeem
     expect(await jedi20bsc.balanceOf(userTwo.address)).to.eq(100);
   });
-
-  // it("should be able to list and cancel", async function () {
-  //   await jediBridge
-  //     .connect(userOne)
-  //     .createItem("Qma8z6G3c1gsKUcfv8JqoEtFMsrq5hBuESp3EiB8juXiS9");
-
-  //   expect(await jedi721.balanceOf(userOne.address)).to.eq(1);
-
-  //   await jedi721.connect(userOne).approve(jediBridge.address, 0);
-  //   await jediBridge.connect(userOne).listItem(0, 10);
-
-  //   expect(await jedi721.balanceOf(userOne.address)).to.eq(0);
-
-  //   await jediBridge.connect(userOne).cancel(0);
-
-  //   expect(await jedi721.balanceOf(userOne.address)).to.eq(1);
-  // });
-
-  // it("should be able to list on auction and cancel", async function () {
-  //   await jediBridge
-  //     .connect(userOne)
-  //     .createItem("Qma8z6G3c1gsKUcfv8JqoEtFMsrq5hBuESp3EiB8juXiS9");
-
-  //   expect(await jedi721.balanceOf(userOne.address)).to.eq(1);
-
-  //   await jedi721.connect(userOne).approve(jediBridge.address, 0);
-  //   await jediBridge.connect(userOne).listItemOnAuction(0, 10000);
-
-  //   expect(await jedi721.balanceOf(userOne.address)).to.eq(0);
-
-  //   await jedi20.mint(userOne.address, 11000);
-  //   await jedi20.connect(userOne).approve(jediBridge.address, 11000);
-  //   await jediBridge.connect(userOne).makeBid(0, 11000);
-
-  //   expect(await jedi20.balanceOf(userOne.address)).to.eq(0);
-  //   expect(await jedi20.balanceOf(jediBridge.address)).to.eq(11000);
-
-  //   await jedi20.mint(userTwo.address, 15000);
-  //   await jedi20.connect(userTwo).approve(jediBridge.address, 15000);
-  //   await jediBridge.connect(userTwo).makeBid(0, 15000);
-
-  //   expect(await jedi20.balanceOf(userTwo.address)).to.eq(0);
-  //   expect(await jedi20.balanceOf(userOne.address)).to.eq(11000);
-  //   expect(await jedi20.balanceOf(jediBridge.address)).to.eq(15000);
-
-  //   await jediBridge.backDate(0);
-
-  //   expect(jediBridge.connect(userOne).finishAuction(0)).to.be.revertedWith(
-  //     "Bids less than 2"
-  //   );
-
-  //   await jediBridge.connect(userOne).cancelAuction(0);
-
-  //   expect(await jedi20.balanceOf(userTwo.address)).to.eq(15000);
-  //   expect(await jedi721.balanceOf(userOne.address)).to.eq(1);
-  // });
-
-  // it("should be able to list and not finish early", async function () {
-  //   await jediBridge
-  //     .connect(userOne)
-  //     .createItem("Qma8z6G3c1gsKUcfv8JqoEtFMsrq5hBuESp3EiB8juXiS9");
-
-  //   await jedi721.connect(userOne).approve(jediBridge.address, 0);
-  //   await jediBridge.connect(userOne).listItemOnAuction(0, 10000);
-
-  //   expect(await jedi721.balanceOf(userOne.address)).to.eq(0);
-
-  //   await jedi20.mint(userOne.address, 11000);
-  //   await jedi20.connect(userOne).approve(jediBridge.address, 11000);
-  //   await jediBridge.connect(userOne).makeBid(0, 11000);
-
-  //   expect(await jedi20.balanceOf(userOne.address)).to.eq(0);
-  //   expect(await jedi20.balanceOf(jediBridge.address)).to.eq(11000);
-
-  //   await jedi20.mint(userTwo.address, 15000);
-  //   await jedi20.connect(userTwo).approve(jediBridge.address, 15000);
-  //   await jediBridge.connect(userTwo).makeBid(0, 15000);
-
-  //   expect(await jedi20.balanceOf(userTwo.address)).to.eq(0);
-  //   expect(await jedi20.balanceOf(userOne.address)).to.eq(11000);
-  //   expect(await jedi20.balanceOf(jediBridge.address)).to.eq(15000);
-
-  //   expect(jediBridge.connect(userOne).finishAuction(0)).to.be.revertedWith(
-  //     "Auction not finished"
-  //   );
-  //   expect(jediBridge.connect(userTwo).finishAuction(0)).to.be.revertedWith(
-  //     "You are not owner"
-  //   );
-  // });
-
-  // it("should be able to list and finish correct", async function () {
-  //   await jediBridge
-  //     .connect(userOne)
-  //     .createItem("Qma8z6G3c1gsKUcfv8JqoEtFMsrq5hBuESp3EiB8juXiS9");
-
-  //   await jedi721.connect(userOne).approve(jediBridge.address, 0);
-  //   await jediBridge.connect(userOne).listItemOnAuction(0, 10000);
-
-  //   await jedi20.mint(userOne.address, 11000);
-  //   await jedi20.connect(userOne).approve(jediBridge.address, 11000);
-  //   await jediBridge.connect(userOne).makeBid(0, 11000);
-
-  //   await jedi20.mint(userTwo.address, 15000);
-  //   await jedi20.connect(userTwo).approve(jediBridge.address, 15000);
-  //   await jediBridge.connect(userTwo).makeBid(0, 15000);
-
-  //   await jedi20.mint(userThree.address, 20000);
-  //   await jedi20.connect(userThree).approve(jediBridge.address, 20000);
-  //   await jediBridge.connect(userThree).makeBid(0, 20000);
-
-  //   await jediBridge.backDate(0);
-
-  //   expect(jediBridge.connect(userOne).cancelAuction(0)).to.be.revertedWith(
-  //     "Bids more than 2"
-  //   );
-
-  //   expect(await jedi721.balanceOf(userThree.address)).to.eq(0);
-  //   expect(await jedi721.balanceOf(jediBridge.address)).to.eq(1);
-
-  //   await jediBridge.connect(userOne).finishAuction(0);
-
-  //   expect(await jedi721.balanceOf(userThree.address)).to.eq(1);
-  //   expect(await jedi721.balanceOf(jediBridge.address)).to.eq(0);
-  //   expect(await jedi20.balanceOf(userOne.address)).to.eq(11000 + 20000);
-  // });
 });

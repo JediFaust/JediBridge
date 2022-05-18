@@ -7,19 +7,26 @@
 import { ethers } from "hardhat";
 import { Contract } from "ethers";
 
+/*
+  Optional ERC20MintableBurnable contract
+  may be deployed with commented out code below
+*/
+
 async function main() {
   let jediBridge: Contract;
-  let jedi20: Contract;
+  // let jedi20: Contract;
 
-  const Jedi20 = await ethers.getContractFactory("ERC20MintableBurnable");
-  jedi20 = <Contract>await Jedi20.deploy("JDT", "JediToken", 10000000, 1);
+  // const Jedi20 = await ethers.getContractFactory("ERC20MintableBurnable");
+  // jedi20 = <Contract>await Jedi20.deploy("JDT", "JediToken", 10000000, 1);
 
-  await jedi20.deployed();
+  // await jedi20.deployed();
 
-  console.log("Jedi20 deployed to:", jedi20.address);
+  // console.log("Jedi20 deployed to:", jedi20.address);
 
   const JediBridge = await ethers.getContractFactory("JediBridge");
-  jediBridge = <Contract>await JediBridge.deploy();
+  jediBridge = <Contract>(
+    await JediBridge.deploy("0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266")
+  );
 
   await jediBridge.deployed();
 

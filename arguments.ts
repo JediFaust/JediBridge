@@ -1,2 +1,2 @@
 /* eslint-disable prettier/prettier */
-module.exports = ["0x507A99cE08C1545a2617ff415351b3b390BaED58"];
+module.exports = ["0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"];
