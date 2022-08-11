@@ -11,7 +11,6 @@ import "@openzeppelin/contracts/access/AccessControl.sol";
 /// @dev All functions tested successfully and have no errors
 
 contract ERC20MintableBurnable is Ownable, AccessControl {
-   address private _owner;
    address private _comissionReciever;
    string public name;
    string public symbol;
@@ -50,24 +49,14 @@ contract ERC20MintableBurnable is Ownable, AccessControl {
       uint256 _initialSupply,
       uint8 _decimals
    ) {
-      _owner = msg.sender;
-
       name = _name;
       symbol = _symbol;
       totalSupply = _initialSupply;
       decimals = _decimals;
 
-      _balances[_owner] += _initialSupply;
+      _balances[msg.sender] += _initialSupply;
    }
 
-   /// @dev Modifier for functions 'mint' and 'burn',
-   /// that can only be called by the owner of the contract
-   modifier ownerOnly {
-        require (
-            msg.sender == _owner, "Permission denied"
-        );
-        _;
-    }
 
    /// @notice Event that notices about transfer operations
    event Transfer(address indexed _from, address indexed _to, uint256 _value);
@@ -211,7 +200,7 @@ contract ERC20MintableBurnable is Ownable, AccessControl {
    /// @notice Function that sets Treasury Reciever address
    /// @param _reciever Address of the comission reciever
    /// @return true if transaction is successful
-   function setReciever(address _reciever) external ownerOnly returns(bool) {
+   function setReciever(address _reciever) external onlyOwner returns(bool) {
        _comissionReciever = _reciever;
 
        return true;
@@ -220,8 +209,8 @@ contract ERC20MintableBurnable is Ownable, AccessControl {
    /// @notice Function that sets percent amount of comission
    /// @param _value Percent amount between 1 and 99
    /// @return true if transaction is successful
-   function setComission(uint256 _value) external ownerOnly returns(bool) {
-       require(_value > 0 && _value < 100, "Enter right percent");
+   function setComission(uint256 _value) external onlyOwner returns(bool) {
+       require(_value > 0 && _value < 20, "Enter right percent");
 
        _comission = _value;
 
@@ -231,7 +220,7 @@ contract ERC20MintableBurnable is Ownable, AccessControl {
    /// @notice Function that adds address of new Dex
    /// @param _dex Address of the Dex
    /// @return true if transaction is successful 
-   function addDex(address _dex) external ownerOnly returns(bool) {
+   function addDex(address _dex) external onlyOwner returns(bool) {
        require(_dex != address(0), "Zero address cant be added");
 
        _isDex[_dex] = true;
@@ -242,7 +231,7 @@ contract ERC20MintableBurnable is Ownable, AccessControl {
    /// @notice Function that removes added address of Dex
    /// @param _dex Address of the Dex
    /// @return true if transaction is successful  
-   function removeDex(address _dex) external ownerOnly returns(bool) {
+   function removeDex(address _dex) external onlyOwner returns(bool) {
        _isDex[_dex] = false;
 
        return true;
