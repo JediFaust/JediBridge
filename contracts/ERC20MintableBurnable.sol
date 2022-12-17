@@ -6,7 +6,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
 
 /// @title ERC20 token contract with EIP20 compatibility
-/// @author Omur Kubanychbekov
+/// @author https://github.com/JediFaust
 /// @notice You can use this contract for make your own ERC20 token
 /// @dev All functions tested successfully and have no errors
 
