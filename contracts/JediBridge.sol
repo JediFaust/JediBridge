@@ -11,7 +11,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
 
 /// @title MultiChain Bridge Contract
-/// @author Omur Kubanychbekov
+/// @author https://github.com/JediFaust
 /// @notice You can use this contract for swap ERC20 tokens between different chains
 /// @dev All functions tested successfully and have no errors
 
