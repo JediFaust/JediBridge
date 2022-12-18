@@ -22,6 +22,7 @@ contract JediBridge is Ownable {
     uint256 private _nonce;
 
     mapping(address => bool) private _tokens;
+    mapping(bytes32 => bool) private _isClaimed;
     mapping(uint256 => bool) private _chainIds;
 
     /// @notice Deploys the contract with the
@@ -139,12 +140,17 @@ contract JediBridge is Ownable {
         uint8 v,
         bytes32 r,
         bytes32 s
-        ) public view returns (bool){
+        ) private returns (bool){
             bytes32 message = keccak256(
                     abi.encodePacked(from, to, token, amount, fromChainId, toChainId, nonce)
                 );
+            
+            require(!_isClaimed[message], "Transfer was claimed!");
+
             address tmpAddr = ecrecover(hashMessage(message), v, r, s);
             if(tmpAddr == _validator) {
+                _isClaimed[message] = true;
+
                 return true;
             } else {
                 return false;
